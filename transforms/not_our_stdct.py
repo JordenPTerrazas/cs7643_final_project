@@ -1,3 +1,4 @@
+"""DCT Implementation by jonashaag on GitHub https://github.com/jonashaag/pydct/tree/master"""
 import torch
 import torch_dct
 
@@ -28,7 +29,7 @@ def sdct_torch(signals, frame_length, frame_step, window=torch.hamming_window):
         window = window(frame_length).to(framed)
     if window is not None:
         framed = framed * window
-    return torch_dct.dct(framed, norm="ortho").transpose(-1, -2)
+    return torch_dct.dct(framed, norm=None).transpose(-1, -2)
 
 
 def isdct_torch(dcts, *, frame_step, frame_length=None, window=torch.hamming_window):
