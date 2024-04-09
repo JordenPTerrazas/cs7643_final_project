@@ -14,7 +14,7 @@ class DownSample(nn.Module):
         self.down_sample_layer = nn.Conv2d(
             in_channels = in_channels, 
             out_channels = in_channels * 2,
-            kernel_size = (2,2),    # Specified in https://arxiv.org/pdf/2306.04286.pdf in Section 2.3
+            kernel_size = 2,    # Specified in https://arxiv.org/pdf/2306.04286.pdf in Section 2.3
             stride = 2,
             padding = 0
         )

@@ -12,6 +12,7 @@ class UpSample(nn.Module):
     
     def __init__(self, in_channels):
         super(UpSample, self).__init__()
+        
         self.up_sample_layer = nn.Sequential(
             nn.PixelShuffle(2), # Space => features * 2 X signals * 2, Depth => in_channels // 4
             nn.Conv2d(  # Depth => in_channels // 2

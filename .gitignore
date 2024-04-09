@@ -1,3 +1,4 @@
 data/datasets/*
 data/MFNet_enhanced_DNS/*
 .venv/*
+*/__pycache__/*

@@ -8,11 +8,11 @@ class GLFB(nn.Module):
     """
 
     """
-    def __init__(self, in_channels, reduction_ratio):
+    def __init__(self, in_channels, reduction_ratio, frame_size, n_frames):
         super(GLFB, self).__init__()
         self.glfb_layer_1 = nn.Sequential(
             # Layer Norm
-            nn.LayerNorm(in_channels),
+            nn.LayerNorm((in_channels, frame_size, n_frames)),
             nn.Conv2d(  # Point Conv 1 & 3 double number of channels (https://arxiv.org/pdf/2306.04286.pdf Section 2.4)
                 in_channels = in_channels,
                 out_channels = in_channels * 2,
@@ -22,7 +22,7 @@ class GLFB(nn.Module):
             nn.Conv2d( # From what I can tell no mention is made as to the kernel size or padding used for the depth wise seperable convolution
                 in_channels = in_channels * 2,
                 out_channels = in_channels * 2,
-                kernel_size = 3,
+                kernel_size = 1,
                 groups = in_channels * 2,
             ),
             # Gate (Not many details are given in the paper, so we'll assume a simple sigmoid gate for now) 
@@ -42,7 +42,7 @@ class GLFB(nn.Module):
         )
         self.glfb_layer_2 = nn.Sequential(
             # Layer Norm
-            nn.LayerNorm(in_channels),
+            nn.LayerNorm((in_channels, frame_size, n_frames)),
             nn.Conv2d(  # Point Conv 1 & 3 double number of channels (https://arxiv.org/pdf/2306.04286.pdf Section 2.4)
                 in_channels = in_channels,
                 out_channels = in_channels * 2,
@@ -69,13 +69,13 @@ class GLFB(nn.Module):
         out = torch.add(l2, y)
         return out
         
-    
-
 class TestGLFB(unittest.TestCase):
     def test_glfb(self):
+        glfb = GLFB(in_channels = 1, reduction_ratio = 8)
+        x = torch.randn(1, 320, 999)
+        out = glfb(x)
+        print(out.size())
         pass
 
-        
-        
 if __name__ == "__main__":
     unittest.main()

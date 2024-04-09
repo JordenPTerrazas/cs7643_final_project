@@ -15,6 +15,7 @@ class ChannelAttention(nn.Module):
         self.max_pool = nn.AdaptiveMaxPool2d(1)
 
         # MLP part for the channel attention
+        # I removed reduction ratio here since it was clipping the shapes
         self.mlp = nn.Sequential(
             nn.Linear(
                 in_features = in_channels,
