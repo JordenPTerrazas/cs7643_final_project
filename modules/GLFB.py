@@ -86,7 +86,7 @@ class GLFB(nn.Module):
     
 class TestGLFB(unittest.TestCase):
     def test_glfb_shape(self):
-        batch_size, in_channels, features, signals = 3, 5, 8, 9
+        batch_size, in_channels, features, signals = 3, 2, 4, 4
         input = torch.rand((batch_size, in_channels, features, signals))
         model = GLFB(in_channels, features, signals)
         output = model.forward(input)
