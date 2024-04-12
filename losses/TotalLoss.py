@@ -3,8 +3,8 @@ import torchaudio
 import torch.nn as nn
 import unittest
 
-from AbsoluteLoss import AbsoluteLoss
-from PolarLoss import PolarLoss
+from .AbsoluteLoss import AbsoluteLoss
+from .PolarLoss import PolarLoss
 
 
 class TotalLoss(nn.Module):

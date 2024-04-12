@@ -7,7 +7,7 @@ import unittest
 import torch
 import torchaudio
 import numpy as np
-from not_our_stdct import sdct_torch
+from .not_our_stdct import sdct_torch
 
 def stdct(waveform, window, hop_size):
     """

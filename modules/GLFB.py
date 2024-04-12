@@ -2,7 +2,7 @@ import torch
 import torchaudio
 import torch.nn as nn
 import unittest
-from ChannelAttention import ChannelAttention
+from .ChannelAttention import ChannelAttention
 
 
 class GLFB(nn.Module):
