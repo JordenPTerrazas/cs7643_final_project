@@ -6,7 +6,10 @@ from ChannelAttention import ChannelAttention
 
 class GLFB(nn.Module):
     """
-
+    Global Local Former Block implemented as described in 'A Mask Free Neural Network 
+    for Monaural Speech Enhancement' Liu et, al.
+    The paper does not fully describe all aspects of the implementation however, so 
+    some assumptions were made and are identified in the comments below.
     """
     def __init__(self, in_channels, reduction_ratio, frame_size, n_frames):
         super(GLFB, self).__init__()
