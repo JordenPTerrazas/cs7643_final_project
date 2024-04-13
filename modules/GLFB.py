@@ -2,7 +2,7 @@ import torch
 import torchaudio
 import torch.nn as nn
 import unittest
-from .ChannelAttention import ChannelAttention
+from ChannelAttention import ChannelAttention
 
 
 class GLFB(nn.Module):
@@ -12,12 +12,12 @@ class GLFB(nn.Module):
     The paper does not fully describe all aspects of the implementation however, so 
     some assumptions were made and are identified in the comments below.
     """
-    def __init__(self, in_channels, features, signals):
+    def __init__(self, in_channels, reduction_ratio, frame_size, n_frames):
         super(GLFB, self).__init__()
         
         # Different LayerNorms so that different parameters can be learned
-        self.norm_1 = nn.LayerNorm([in_channels, features, signals])
-        self.norm_2 = nn.LayerNorm([in_channels, features, signals])
+        self.norm_1 = nn.LayerNorm([in_channels, frame_size, n_frames])
+        self.norm_2 = nn.LayerNorm([in_channels, frame_size, n_frames])
         
         # Point Conv 1 & 3 double number of channels (https://arxiv.org/pdf/2306.04286.pdf Section 2.4)
         # Point Conv 2 & 4 maintain number of channels (https://arxiv.org/pdf/2306.04286.pdf Section 2.4)
@@ -56,7 +56,10 @@ class GLFB(nn.Module):
         self.gate_1 = nn.GLU(dim = 1)
         self.gate_2 = nn.GLU(dim = 1)
         
-        self.attention = ChannelAttention(in_channels = in_channels, reduction_ratio = 1)
+        self.attention = ChannelAttention(
+            in_channels = in_channels, 
+            reduction_ratio = reduction_ratio
+        )
         
         self.glfb_layer_1 = nn.Sequential(
             self.norm_1,
@@ -86,16 +89,16 @@ class GLFB(nn.Module):
     
 class TestGLFB(unittest.TestCase):
     def test_glfb_shape(self):
-        batch_size, in_channels, features, signals = 3, 2, 4, 4
-        input = torch.rand((batch_size, in_channels, features, signals))
-        model = GLFB(in_channels, features, signals)
+        batch_size, in_channels, frame_size, n_frames = 3, 2, 4, 4
+        input = torch.rand((batch_size, in_channels, frame_size, n_frames))
+        model = GLFB(in_channels, frame_size, n_frames)
         output = model.forward(input)
         N, C, F, S = output.shape
         self.assertTrue(
             (N == batch_size) 
             and (C == in_channels) 
-            and (F == features) 
-            and (S == signals)
+            and (F == frame_size) 
+            and (S == n_frames)
         )
 
         

@@ -1,10 +1,10 @@
 import unittest
 import torch
 import torch.nn as nn
-from .GLFB import GLFB
-from .UpSample import UpSample
-from .DownSample import DownSample
-from .Projection import Projection
+from GLFB import GLFB
+from UpSample import UpSample
+from DownSample import DownSample
+from Projection import Projection
 
 # One thing not specified in the paper is the scenario where we end up with rounding
 # error when we downsample and upsample. I'm going to assume that we should pad the
@@ -175,7 +175,7 @@ class MFNet(nn.Module):
 class TestMFNet(unittest.TestCase):
     def test_mfnet(self):
         mfnet = MFNet(in_channels = 1, out_channels = 16, reduction_ratio = 8)
-        x = torch.randn(1, 320, 999)
+        x = torch.randn(1, 1, 320, 999)
         out = mfnet(x)
         print(out.size())
         pass
