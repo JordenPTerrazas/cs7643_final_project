@@ -1,0 +1,15 @@
+Train:
+  batch_size: 1
+  lr: 0.001
+  betas: [0.9, 0.999]
+  weight_decay: 0.01
+  epochs: 5
+  gamma: 0.5
+  steps: [10, 15, 20]
+  
+
+network:
+  model: MFNet
+
+data:
+  save_best: True

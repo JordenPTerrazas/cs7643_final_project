@@ -86,7 +86,7 @@ do
     # wget "$URL" -O "$BLOB"
 
     # Same, + unpack files on the fly
-    # curl "$URL" | tar -f - -x -j
+    curl "$URL" | tar -f - -x -j
 done
 
 #!/usr/bin/bash
