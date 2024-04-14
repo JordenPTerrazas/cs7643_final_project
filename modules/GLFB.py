@@ -11,7 +11,7 @@ class GLFB(nn.Module):
     The paper does not fully describe all aspects of the implementation however, so 
     some assumptions were made and are identified in the comments below.
     """
-    def __init__(self, in_channels, reduction_ratio, frame_size, n_frames):
+    def __init__(self, in_channels, frame_size, n_frames):
         super(GLFB, self).__init__()
         self.glfb_layer_1 = nn.Sequential(
             # Layer Norm
@@ -36,7 +36,7 @@ class GLFB(nn.Module):
             ),
             nn.Sigmoid(),
             # Channel Attention
-            ChannelAttention(in_channels = in_channels, reduction_ratio = reduction_ratio),
+            ChannelAttention(in_channels = in_channels),
             nn.Conv2d(  # Point Conv 2 & 4 maintain number of channels (https://arxiv.org/pdf/2306.04286.pdf Section 2.4)
                 in_channels = in_channels,
                 out_channels = in_channels,

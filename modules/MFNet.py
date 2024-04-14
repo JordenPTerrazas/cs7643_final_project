@@ -10,7 +10,7 @@ from Projection import Projection
 # error when we downsample and upsample. I'm going to assume that we should pad the
 # result at the layer it occurs, but not sure on best practice.
 class MFNet(nn.Module):
-    def __init__(self, in_channels: int = 1, out_channels: int = 16, reduction_ratio: int = 8):
+    def __init__(self, in_channels: int = 1, out_channels: int = 16):
         super(MFNet, self).__init__()
         
         # Projection Layers (in_channels -> out_channels)
@@ -27,168 +27,144 @@ class MFNet(nn.Module):
         # GLFB Layers (out_channels -> out_channels)
         self.glfb_1 = GLFB(
             in_channels = out_channels,
-            reduction_ratio = reduction_ratio,
             frame_size = 320,
             n_frames = 1008
         )
 
         self.glfb_2 = GLFB(
             in_channels = out_channels * 2,
-            reduction_ratio = reduction_ratio,
             frame_size = 160,
             n_frames = 504
         )
 
         self.glfb_3_1 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_3_2 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_3_3 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_3_4 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_3_5 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_3_6 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_3_7 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_3_8 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_4_1 = GLFB(
             in_channels = out_channels * 8,
-            reduction_ratio = reduction_ratio,
             frame_size = 40,
             n_frames = 126
         )
 
         self.glfb_4_2 = GLFB(
             in_channels = out_channels * 8,
-            reduction_ratio = reduction_ratio,
             frame_size = 40,
             n_frames = 126
         )
 
         self.glfb_4_3 = GLFB(
             in_channels = out_channels * 8,
-            reduction_ratio = reduction_ratio,
             frame_size = 40,
             n_frames = 126
         )
 
         self.glfb_4_4 = GLFB(
             in_channels = out_channels * 8,
-            reduction_ratio = reduction_ratio,
             frame_size = 40,
             n_frames = 126
         )
 
         self.glfb_5_1 = GLFB(
             in_channels = out_channels * 16,
-            reduction_ratio = reduction_ratio,
             frame_size = 20,
             n_frames = 63
         )
 
         self.glfb_5_2 = GLFB(
             in_channels = out_channels * 16,
-            reduction_ratio = reduction_ratio,
             frame_size = 20,
             n_frames = 63
         )
 
         self.glfb_5_3 = GLFB(
             in_channels = out_channels * 16,
-            reduction_ratio = reduction_ratio,
             frame_size = 20,
             n_frames = 63
         )
 
         self.glfb_5_4 = GLFB(
             in_channels = out_channels * 16,
-            reduction_ratio = reduction_ratio,
             frame_size = 20,
             n_frames = 63
         )
 
         self.glfb_5_5 = GLFB(
             in_channels = out_channels * 16,
-            reduction_ratio = reduction_ratio,
             frame_size = 20,
             n_frames = 63
         )
 
         self.glfb_5_6 = GLFB(
             in_channels = out_channels * 16,
-            reduction_ratio = reduction_ratio,
             frame_size = 20,
             n_frames = 63
         )
 
         self.glfb_6 = GLFB(
             in_channels = out_channels * 8,
-            reduction_ratio = reduction_ratio,
             frame_size = 40,
             n_frames = 126
         )
 
         self.glfb_7 = GLFB(
             in_channels = out_channels * 4,
-            reduction_ratio = reduction_ratio,
             frame_size = 80,
             n_frames = 252
         )
 
         self.glfb_8 = GLFB(
             in_channels = out_channels * 2,
-            reduction_ratio = reduction_ratio,
             frame_size = 160,
             n_frames = 504
         )
 
         self.glfb_9 = GLFB(
             in_channels = out_channels,
-            reduction_ratio = reduction_ratio,
             frame_size = 320,
             n_frames = 1008
         )
@@ -284,7 +260,7 @@ class MFNet(nn.Module):
 
 class TestMFNet(unittest.TestCase):
     def test_mfnet(self):
-        mfnet = MFNet(in_channels = 1, out_channels = 16, reduction_ratio = 8)
+        mfnet = MFNet(in_channels = 1, out_channels = 16)
         x = torch.randn(1, 320, 999)
         out = mfnet(x)
         padded_x = nn.functional.pad(x, (0, 16 - x.shape[-1] % 16))
