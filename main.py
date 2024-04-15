@@ -9,7 +9,8 @@ import torch
 import torchaudio
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
-from torchmetrics.audio import PerceptualEvaluationSpeechQuality, ShortTimeObjectiveIntelligibility
+from torchmetrics.audio.pesq import PerceptualEvaluationSpeechQuality
+from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
 import torchaudio.transforms as transforms
 import torchaudio.functional as F
 
@@ -220,7 +221,7 @@ def main():
     
     # Hyper-Parameters: gamma, lr, betas, weight_decay, epochs
     if args.model == "MFNet":
-        model = MFNet(in_channels = 1, out_channels = 16, reduction_ratio = 8)
+        model = MFNet(in_channels = 1, out_channels = 16)
     else:   # Could place modified model here
         pass
     criterion = TotalLoss(gamma = 0.5)

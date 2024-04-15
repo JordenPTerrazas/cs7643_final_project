@@ -1,10 +1,11 @@
 import unittest
 import torch
 import torch.nn as nn
-from GLFB import GLFB
-from UpSample import UpSample
-from DownSample import DownSample
-from Projection import Projection
+#from modules import GLFB, UpSample, DownSample, Projection
+from .GLFB import GLFB
+from .UpSample import UpSample
+from .DownSample import DownSample
+from .Projection import Projection
 
 # One thing not specified in the paper is the scenario where we end up with rounding
 # error when we downsample and upsample. I'm going to assume that we should pad the
