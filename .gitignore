@@ -1,3 +1,8 @@
 data/datasets/*
 data/MFNet_enhanced_DNS/*
+DNS_scripts/datasets/*
+DNS_scripts/datasets\training_set_apr14\clean/*
+DNS_scripts/datasets\training_set_apr14\noise/*
+DNS_scripts/datasets\training_set_apr14\noisy/*
 .venv/*
+*/__pycache__/*
