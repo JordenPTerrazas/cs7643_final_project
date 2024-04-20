@@ -60,7 +60,7 @@ def isdct_torch(dcts, *, frame_step, frame_length=None, window=torch.hamming_win
     *_, frame_length2, n_frames = dcts.shape
     assert frame_length in {None, frame_length2}
     signals = torch_overlap_add(
-        torch_dct.idct(dcts.transpose(-1, -2), norm="ortho").transpose(-1, -2),
+        torch_dct.idct(dcts.transpose(-1, -2), norm=None).transpose(-1, -2),
         frame_step=frame_step,
     )
     if callable(window):

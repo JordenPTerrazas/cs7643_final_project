@@ -41,7 +41,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def PESQ(output, target, mode = 'nb'):
+def PESQ(output, target, mode = 'wb'):
     """
     Calculates the Perceptual Evaluation of Speech Quality metric.
     
@@ -56,7 +56,7 @@ def PESQ(output, target, mode = 'nb'):
         fs = 8000
     elif mode == 'wb':
         fs = 16000
-    pesq = PerceptualEvaluationSpeechQuality(fs, 'nb')
+    pesq = PerceptualEvaluationSpeechQuality(fs, 'wb')
     return pesq(output, target)
 
 
@@ -96,36 +96,47 @@ def train(epoch, data_loader, model, optimizer, criterion):
         
         # FOR TESTING PURPOSES
         # TO VERIFY THAT MODEL IS LEARNING
-        target, sample_rate = torchaudio.load("./data/datasets/blind_test_set/noreverb_fileid_0.wav")
-        noise, _ = torchaudio.load("./data/datasets/blind_test_set/noreverb_fileid_1.wav")
-        snr_dbs = torch.tensor([3])
-        data = F.add_noise(target, noise, snr_dbs)
+        target, sample_rate = torchaudio.load("./data/datasets/DNS_subset_10/clean/clean_fileid_0.wav")
+        data, sample_rate = torchaudio.load("./data/datasets/DNS_subset_10/noisy/book_11284_chp_0013_reader_05262_6_59oHl43FnXw_snr8_fileid_0.wav")
         data, target = data[None,:,:], target[None,:,:]
-        print(data.shape, target.shape)
+        # print(data.shape, target.shape)
         # # # # # # # # # # # #
         # # # # # # # # # # # #
         
         if torch.cuda.is_available():
+            model.to('cuda')
             data = data.cuda()
             target = target.cuda()
             
         # Transform
         data = sdct_torch(data, 320, 160, torch.hann_window)
         target = sdct_torch(target, 320, 160, torch.hann_window)
-        print(data.shape, target.shape)
         
+        # Fwd pass 
         out = model.forward(data)
-        print(out.shape)
+        
+        # Remove padding (9 comes from 16 - 999 % 16, e.g. we can code to be dynamic later)
+        out = out[:,:,:,:-9]
+        
+        # Compute loss then backwards
         loss = criterion(out, target)
         print(loss)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
-        i_out, i_target = isdct_torch(out), isdct_torch(target)
+        # Inverse Transform
+        i_out, i_target = isdct_torch(out, frame_step=160, frame_length=320, window=torch.hann_window), isdct_torch(target, frame_step=160, frame_length=320, window=torch.hann_window)
+        
+        # Clean up large values from Inverse Transform
+        i_target = torch.nan_to_num(i_target)
+        i_out = torch.nan_to_num(i_out)
+
+        # Compute PESQ & STOI 
         batch_pesq = PESQ(i_out, i_target)
         batch_stoi = STOI(i_out, i_target)
 
+        # Update Everything
         batch_size = out.shape[0]
         losses.update(loss.item(), out.shape[0])
         pesq.update(batch_pesq, batch_size)
@@ -241,16 +252,16 @@ def main():
         # train loop
         train(epoch, train_loader, model, optimizer, criterion)
 
-    #     # validation loop
-    #     pesq, stoi = validate(epoch, test_loader, model, criterion)
+        # validation loop
+        pesq, stoi = validate(epoch, test_loader, model, criterion)
 
-    #     if pesq > best_pesq and stoi > best_stoi:
-    #         best_pesq = pesq
-    #         best_stoi = stoi
-    #         best_model = copy.deepcopy(model)
+        if pesq > best_pesq and stoi > best_stoi:
+            best_pesq = pesq
+            best_stoi = stoi
+            best_model = copy.deepcopy(model)
 
-    # print('Best Prec @1 PESQ: {:.4f}'.format(pesq))
-    # print('Best Prec @1 STOI: {:.4f}'.format(stoi))
+    print('Best Prec @1 PESQ: {:.4f}'.format(pesq))
+    print('Best Prec @1 STOI: {:.4f}'.format(stoi))
 
     if args.save_best:
         torch.save(best_model.state_dict(), './checkpoints/' + args.model + '.pth')
