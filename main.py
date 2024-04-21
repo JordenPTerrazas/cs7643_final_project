@@ -59,7 +59,13 @@ def PESQ(output, target, mode = 'wb'):
     elif mode == 'wb':
         fs = 16000
     pesq = PerceptualEvaluationSpeechQuality(fs, 'wb')
-    return pesq(output, target)
+
+    try:
+        out = pesq(output, target)
+    except:
+        print("Error in PESQ")
+        out = torch.tensor(-0.5)
+    return out
 
 
 def STOI(output, target):
@@ -125,7 +131,6 @@ def train(epoch, data_loader, model, optimizer, criterion):
         loss.backward()
         optimizer.step()
         
-        batch_stoi = STOI(out, target_waveforms)
         # Inverse Transform
         i_out = isdct_torch(out, frame_step=160, frame_length=320, window=torch.sqrt(torch.hann_window(window_length=320)).cuda() + window_eps) 
         i_target = isdct_torch(target_waveforms, frame_step=160, frame_length=320, window=torch.sqrt(torch.hann_window(window_length=320)).cuda() + window_eps)
@@ -138,7 +143,7 @@ def train(epoch, data_loader, model, optimizer, criterion):
 
         # Compute PESQ & STOI 
         batch_pesq = PESQ(i_out, i_target)
-        #batch_stoi = STOI(i_out, i_target)
+        batch_stoi = STOI(i_out, i_target)
 
         # Update Everything
         batch_size = out.shape[0]

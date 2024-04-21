@@ -31,7 +31,7 @@ def sdct_torch(signals, frame_length, frame_step, window=torch.hamming_window):
         window = window(frame_length).to(framed)
     if window is not None:
         framed = framed * window
-    return torch_dct.dct(framed, norm=None).transpose(-1, -2)
+    return torch_dct.dct(framed, norm="ortho").transpose(-1, -2)
 
 
 def isdct_torch(dcts, *, frame_step, frame_length=None, window=torch.hamming_window):
@@ -62,7 +62,7 @@ def isdct_torch(dcts, *, frame_step, frame_length=None, window=torch.hamming_win
     *_, frame_length2, n_frames = dcts.shape
     assert frame_length in {None, frame_length2}
     signals = torch_overlap_add(
-        torch_dct.idct(dcts.transpose(-1, -2), norm=None).transpose(-1, -2),
+        torch_dct.idct(dcts.transpose(-1, -2), norm="ortho").transpose(-1, -2),
         frame_step=frame_step,
     )
     if callable(window):
@@ -104,16 +104,16 @@ def torch_overlap_add(framed, *, frame_step, frame_length=None):
 
 class TestSTDCT(unittest.TestCase):
     def test_sdct_torch(self):
-        waveform, sample_rate = torchaudio.load("data/datasets/DNS_subset_10/noisy/book_00000_chp_0009_reader_06709_0_UO4bF1Y3jmk_snr34_fileid_27127.wav")
+        waveform, sample_rate = torchaudio.load("data/datasets/DNS_subset_10/train/noisy/book_00000_chp_0009_reader_06709_0_UO4bF1Y3jmk_snr34_fileid_27127.wav")
         frame_length = 320
         frame_step = 160
-        window = torch.hann_window
+        window = torch.sqrt(torch.hann_window(320)) + 1e-8
 
         dcts = sdct_torch(waveform, frame_length=frame_length, frame_step=frame_step, window=window)
         idcts = isdct_torch(dcts, frame_step=frame_step, frame_length=frame_length, window=window)
-        idcts = torch.nan_to_num(idcts)
 
-        print(torch.sum(torch.abs(waveform - idcts)))
+        print(torch.sum(waveform - idcts))
+        assert torch.allclose(waveform, idcts, atol=1e-2)
 
 if __name__ == "__main__":
     unittest.main()

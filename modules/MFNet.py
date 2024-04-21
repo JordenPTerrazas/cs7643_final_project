@@ -13,7 +13,17 @@ from .Projection import Projection
 class MFNet(nn.Module):
     def __init__(self, in_channels: int = 1, out_channels: int = 16):
         super(MFNet, self).__init__()
-        
+        # Batch norm layers
+        # self.bn_1 = nn.BatchNorm2d(out_channels)
+        # self.bn_2 = nn.BatchNorm2d(2*out_channels)
+        # self.bn_3 = nn.BatchNorm2d(4*out_channels)
+        # self.bn_4 = nn.BatchNorm2d(8*out_channels)
+        # self.bn_5 = nn.BatchNorm2d(8*out_channels)
+        # self.bn_6 = nn.BatchNorm2d(4*out_channels)
+        # self.bn_7 = nn.BatchNorm2d(2*out_channels)
+        # self.bn_8 = nn.BatchNorm2d(out_channels)
+        # self.bn_9 = nn.BatchNorm2d(in_channels)
+
         # Projection Layers (in_channels -> out_channels)
         self.projection_1 = Projection(
             in_channels = in_channels, 
@@ -211,9 +221,13 @@ class MFNet(nn.Module):
         # Encoder part
         x = self.projection_1(x)
         x1 = self.glfb_1(x)
-        
+        # BN
+        # x1 = self.bn_1(x)
+
         x = self.downsample_1(x1)
         x2 = self.glfb_2(x)
+        # BN
+        # x2 = self.bn_2(x)
 
         x = self.downsample_2(x2)
         x = self.glfb_3_1(x)
@@ -224,12 +238,16 @@ class MFNet(nn.Module):
         x = self.glfb_3_6(x)
         x = self.glfb_3_7(x)
         x3 = self.glfb_3_8(x)
+        # BN
+        # x3 = self.bn_3(x)
 
         x = self.downsample_3(x3)
         x = self.glfb_4_1(x)
         x = self.glfb_4_2(x)
         x = self.glfb_4_3(x)
         x4 = self.glfb_4_4(x)
+        # BN
+        # x4 = self.bn_4(x)
 
         # Bottleneck
         x = self.downsample_4(x4)
@@ -241,28 +259,37 @@ class MFNet(nn.Module):
         x = self.glfb_5_6(x)
         x = self.upsample_1(x)
         x = torch.add(x, x4)
+        # BN
+        # x = self.bn_5(x)
         
         # Decoder part
         x = self.glfb_6(x)
         x = self.upsample_2(x)
         x = torch.add(x, x3)
+        # BN
+        # x = self.bn_6(x)
 
         x = self.glfb_7(x)
         x = self.upsample_3(x)
         x = torch.add(x, x2)
+        # BN
+        # x = self.bn_7(x)
 
         x = self.glfb_8(x)
         x = self.upsample_4(x)
         x = torch.add(x, x1)
+        # BN
+        # x = self.bn_8(x)
 
         x = self.glfb_9(x)
         x = self.projection_2(x)
+        # x = self.bn_9(x)
         return x
 
 class TestMFNet(unittest.TestCase):
     def test_mfnet(self):
         mfnet = MFNet(in_channels = 1, out_channels = 16)
-        x = torch.randn(1, 320, 999)
+        x = torch.randn(2, 1, 320, 999)
         out = mfnet(x)
         padded_x = nn.functional.pad(x, (0, 16 - x.shape[-1] % 16))
         assert padded_x.size() == out.size()
