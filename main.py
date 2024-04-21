@@ -17,10 +17,12 @@ import torchaudio.functional as F
 from transforms.not_our_stdct import sdct_torch, isdct_torch
 from modules import MFNet
 from losses import TotalLoss
+from dataloader import DNSDataset
 
 parser = argparse.ArgumentParser(description='CS7643 Final Project')
 parser.add_argument('--config', default='./configs/config.yaml')
 
+window_eps = 1e-8
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -90,51 +92,53 @@ def train(epoch, data_loader, model, optimizer, criterion):
     losses = AverageMeter()
     pesq = AverageMeter()
     stoi = AverageMeter()
-
-    for idx, [waveform, sample_rate, _, _, _, _] in enumerate(data_loader):
+    
+    if torch.cuda.is_available():
+        model.to("cuda")
+   
+    for idx, (input_waveforms, target_waveforms) in enumerate(data_loader):
         start = time.time()
         
         # FOR TESTING PURPOSES
         # TO VERIFY THAT MODEL IS LEARNING
-        target, sample_rate = torchaudio.load("./data/datasets/DNS_subset_10/clean/clean_fileid_0.wav")
-        data, sample_rate = torchaudio.load("./data/datasets/DNS_subset_10/noisy/book_11284_chp_0013_reader_05262_6_59oHl43FnXw_snr8_fileid_0.wav")
-        data, target = data[None,:,:], target[None,:,:]
+        # target, sample_rate = torchaudio.load("./data/datasets/DNS_subset_10/clean/clean_fileid_0.wav")
+        # data, sample_rate = torchaudio.load("./data/datasets/DNS_subset_10/noisy/book_11284_chp_0013_reader_05262_6_59oHl43FnXw_snr8_fileid_0.wav")
+        # data, target = data[None,:,:], target[None,:,:]
         # print(data.shape, target.shape)
         # # # # # # # # # # # #
         # # # # # # # # # # # #
         
         if torch.cuda.is_available():
-            model.to('cuda')
-            data = data.cuda()
-            target = target.cuda()
-            
-        # Transform
-        data = sdct_torch(data, 320, 160, torch.hann_window)
-        target = sdct_torch(target, 320, 160, torch.hann_window)
+            input_waveforms = input_waveforms.cuda()
+            target_waveforms = target_waveforms.cuda()
         
         # Fwd pass 
-        out = model.forward(data)
+        out = model.forward(input_waveforms)
         
         # Remove padding (9 comes from 16 - 999 % 16, e.g. we can code to be dynamic later)
         out = out[:,:,:,:-9]
         
         # Compute loss then backwards
-        loss = criterion(out, target)
+        loss = criterion(out, target_waveforms)
         print(loss)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
+        batch_stoi = STOI(out, target_waveforms)
         # Inverse Transform
-        i_out, i_target = isdct_torch(out, frame_step=160, frame_length=320, window=torch.hann_window), isdct_torch(target, frame_step=160, frame_length=320, window=torch.hann_window)
+        i_out = isdct_torch(out, frame_step=160, frame_length=320, window=torch.sqrt(torch.hann_window(window_length=320)).cuda() + window_eps) 
+        i_target = isdct_torch(target_waveforms, frame_step=160, frame_length=320, window=torch.sqrt(torch.hann_window(window_length=320)).cuda() + window_eps)
         
         # Clean up large values from Inverse Transform
-        i_target = torch.nan_to_num(i_target)
-        i_out = torch.nan_to_num(i_out)
+        i_target = torch.nan_to_num(i_target, nan=0.0, posinf=40.0, neginf=-40.0)
+        i_out = torch.nan_to_num(i_out, nan=0.0, posinf=40.0, neginf=-40.0)
+        print("Max in target", torch.max(i_target))
+        print("Max in out", torch.max(i_out))
 
         # Compute PESQ & STOI 
         batch_pesq = PESQ(i_out, i_target)
-        batch_stoi = STOI(i_out, i_target)
+        #batch_stoi = STOI(i_out, i_target)
 
         # Update Everything
         batch_size = out.shape[0]
@@ -173,9 +177,16 @@ def validate(epoch, val_loader, model, criterion):
         
         with torch.no_grad():
             out = model(data)
+            out = out[:,:,:,:-9]
             loss = criterion(out, target)
 
-        i_out, i_target = isdct_torch(out), isdct_torch(target)
+        i_out = isdct_torch(out, frame_step=160, frame_length=320, window=torch.sqrt(torch.hann_window(window_length=320)).cuda() + window_eps)
+        i_target = isdct_torch(target, frame_step=160, frame_length=320, window=torch.sqrt(torch.hann_window(window_length=320)).cuda() + window_eps)
+        
+        # Clean up large values from Inverse Transform
+        i_target = torch.nan_to_num(i_target, nan=0.0, posinf=40.0, neginf=-40.0)
+        i_out = torch.nan_to_num(i_out, nan=0.0, posinf=40.0, neginf=-40.0)
+        
         batch_pesq = PESQ(i_out, i_target)
         batch_stoi = STOI(i_out, i_target)
         
@@ -215,26 +226,51 @@ def main():
     for key in config:
         for k, v in config[key].items():
             setattr(args, k, v)
-    
-    # Transform data with stdct prior to training model
-    train_dataset = torchaudio.datasets.LIBRISPEECH(
-        root = "./data/datasets/LIBRISPEECH",
-        url = "dev-clean",
-        download = True
+
+    # train_dataset = torchaudio.datasets.LIBRISPEECH(
+    #     root = "./data/datasets/LIBRISPEECH",
+    #     url = "dev-clean",
+    #     download = True
+    # )
+    # train_loader = DataLoader(
+    #     train_dataset, 
+    #     batch_size=args.batch_size, 
+    #     shuffle=True
+    # )
+    # test_dataset = None
+    # test_loader = None
+    train_dataset = DNSDataset(
+        clean_dir=args.train_label_dir,
+        noisy_dir=args.train_data_dir,
+        transform=sdct_torch,
+        transform_kwargs={"frame_length": 320, "frame_step": 160, "window": torch.sqrt(torch.hann_window(window_length=320)) + window_eps}
     )
-    train_loader = DataLoader(
-        train_dataset, 
-        batch_size=args.batch_size, 
+
+    train_dataloader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
         shuffle=True
     )
-    test_dataset = None
-    test_loader = None
-    
+
+    val_dataset = DNSDataset(
+        clean_dir=args.val_label_dir,
+        noisy_dir=args.val_data_dir,
+        transform=sdct_torch,
+        transform_kwargs={"frame_length": 320, "frame_step": 160, "window": torch.sqrt(torch.hann_window(window_length=320)) + window_eps}
+    )
+
+    val_dataloader = DataLoader(
+        val_dataset,
+        batch_size=args.batch_size,
+        shuffle=True
+    )
+
     # Hyper-Parameters: gamma, lr, betas, weight_decay, epochs
     if args.model == "MFNet":
         model = MFNet(in_channels = 1, out_channels = 16)
     else:   # Could place modified model here
         pass
+
     criterion = TotalLoss(gamma = 0.5)
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -250,10 +286,10 @@ def main():
         adjust_learning_rate(optimizer, epoch, args)
 
         # train loop
-        train(epoch, train_loader, model, optimizer, criterion)
+        train(epoch, train_dataloader, model, optimizer, criterion)
 
         # validation loop
-        pesq, stoi = validate(epoch, test_loader, model, criterion)
+        pesq, stoi = validate(epoch, val_dataloader, model, criterion)
 
         if pesq > best_pesq and stoi > best_stoi:
             best_pesq = pesq

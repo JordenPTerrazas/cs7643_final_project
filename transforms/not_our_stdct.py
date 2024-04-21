@@ -1,6 +1,8 @@
 """DCT Implementation by jonashaag on GitHub https://github.com/jonashaag/pydct/tree/master"""
+import unittest
 import torch
 import torch_dct
+import torchaudio
 
 
 def sdct_torch(signals, frame_length, frame_step, window=torch.hamming_window):
@@ -99,3 +101,19 @@ def torch_overlap_add(framed, *, frame_step, frame_length=None):
         kernel_size=(frame_length2, 1),
         stride=(frame_step, 1),
     ).reshape(*rest, -1)
+
+class TestSTDCT(unittest.TestCase):
+    def test_sdct_torch(self):
+        waveform, sample_rate = torchaudio.load("data/datasets/DNS_subset_10/noisy/book_00000_chp_0009_reader_06709_0_UO4bF1Y3jmk_snr34_fileid_27127.wav")
+        frame_length = 320
+        frame_step = 160
+        window = torch.hann_window
+
+        dcts = sdct_torch(waveform, frame_length=frame_length, frame_step=frame_step, window=window)
+        idcts = isdct_torch(dcts, frame_step=frame_step, frame_length=frame_length, window=window)
+        idcts = torch.nan_to_num(idcts)
+
+        print(torch.sum(torch.abs(waveform - idcts)))
+
+if __name__ == "__main__":
+    unittest.main()
