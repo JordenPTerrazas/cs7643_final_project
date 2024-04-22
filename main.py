@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import torchaudio
 import torch.nn as nn
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics.audio.pesq import PerceptualEvaluationSpeechQuality
 from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
@@ -81,19 +82,6 @@ def STOI(output, target):
     """
     stoi = ShortTimeObjectiveIntelligibility(16000, False)
     return stoi(output, target)
-
-
-def adjust_learning_rate(optimizer, epoch, args):
-    epoch += 1
-    if epoch > args.steps[1]:
-        lr = args.lr * 0.01
-    elif epoch > args.steps[0]:
-        lr = args.lr * 0.1
-    else:
-        lr = args.lr
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
-        
 
 def train(epoch, data_loader, model, optimizer, criterion, writer):
     iter_time = AverageMeter()
@@ -307,6 +295,8 @@ def main():
         betas = args.betas,
         weight_decay = args.weight_decay
     )
+    scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=0.0001)
+
     if args.load_checkpoint:
         optimizer.load_state_dict(torch.load(args.checkpoint_optimizer_path))
     
@@ -320,10 +310,10 @@ def main():
     best_stoi = 0.0
     best_model = None
     for epoch in range(start_epoch, args.epochs):
-        adjust_learning_rate(optimizer, epoch, args)
-
         # train loop
         train(epoch, train_dataloader, model, optimizer, criterion, writer)
+
+        scheduler.step()
 
         # validation loop
         pesq, stoi = validate(epoch, val_dataloader, model, criterion, writer)
