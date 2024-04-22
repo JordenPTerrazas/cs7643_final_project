@@ -10,6 +10,10 @@ Train:
 
 network:
   model: MFNet
+  load_checkpoint: False
+  checkpoint_model_path: blah
+  checkpoint_optimizer_path: blah
+  start_epoch: 0 
 
 data:
   train_data_dir: data/datasets/DNS_subset_10/train/noisy

@@ -14,6 +14,7 @@ from torchmetrics.audio.pesq import PerceptualEvaluationSpeechQuality
 from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
 import torchaudio.transforms as transforms
 import torchaudio.functional as F
+from torch.utils.tensorboard import SummaryWriter
 
 from transforms.not_our_stdct import sdct_torch, isdct_torch
 from modules import MFNet
@@ -94,7 +95,7 @@ def adjust_learning_rate(optimizer, epoch, args):
         param_group['lr'] = lr
         
 
-def train(epoch, data_loader, model, optimizer, criterion):
+def train(epoch, data_loader, model, optimizer, criterion, writer):
     iter_time = AverageMeter()
     losses = AverageMeter()
     pesq = AverageMeter()
@@ -164,6 +165,9 @@ def train(epoch, data_loader, model, optimizer, criterion):
                 torch.save(optimizer.state_dict(), save_dir + '/' + 'optim' + f'_epoch{epoch}' + f'_step{idx}' + '_optimizer.pth')
         
         if idx % 10 == 0:
+            writer.add_scalar('Loss/train', loss.item(), epoch * len(data_loader) + idx)
+            writer.add_scalar('PESQ/train', batch_pesq, epoch * len(data_loader) + idx)
+            writer.add_scalar('STOI/train', batch_stoi, epoch * len(data_loader) + idx)
             print(('Epoch: [{0}][{1}/{2}]\t'
                    'Time {iter_time.val:.3f} ({iter_time.avg:.3f})\t'
                    'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
@@ -178,7 +182,7 @@ def train(epoch, data_loader, model, optimizer, criterion):
                        stoi=stoi))
 
 
-def validate(epoch, val_loader, model, criterion):
+def validate(epoch, val_loader, model, criterion, writer):
     iter_time = AverageMeter()
     losses = AverageMeter()
     pesq = AverageMeter()
@@ -213,6 +217,9 @@ def validate(epoch, val_loader, model, criterion):
         iter_time.update(time.time() - start)
         
         if idx % 10 == 0:
+            writer.add_scalar('Loss/val', loss.item(), epoch * len(val_loader) + idx)
+            writer.add_scalar('PESQ/val', batch_pesq, epoch * len(val_loader) + idx)
+            writer.add_scalar('STOI/val', batch_stoi, epoch * len(val_loader) + idx)
             print(('Epoch: [{0}][{1}/{2}]\t'
                    'Time {iter_time.val:.3f} ({iter_time.avg:.3f})\t'
                    'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
@@ -284,6 +291,12 @@ def main():
     # Hyper-Parameters: gamma, lr, betas, weight_decay, epochs
     if args.model == "MFNet":
         model = MFNet(in_channels = 1, out_channels = 16)
+
+        if args.load_checkpoint:
+            model.load_state_dict(torch.load(args.checkpoint_model_path))
+            start_epoch = args.start_epoch
+        else:
+            start_epoch = 0
     else:   # Could place modified model here
         pass
 
@@ -294,18 +307,26 @@ def main():
         betas = args.betas,
         weight_decay = args.weight_decay
     )
+    if args.load_checkpoint:
+        optimizer.load_state_dict(torch.load(args.checkpoint_optimizer_path))
     
+    if os.path.exists(args.save_dir + '/logs'):
+        writer = SummaryWriter(args.save_dir + '/logs')
+    else:
+        os.makedirs(args.save_dir + '/logs')
+        writer = SummaryWriter(args.save_dir + '/logs')
+
     best_pesq = 0.0
     best_stoi = 0.0
     best_model = None
-    for epoch in range(args.epochs):
+    for epoch in range(start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch, args)
 
         # train loop
-        train(epoch, train_dataloader, model, optimizer, criterion)
+        train(epoch, train_dataloader, model, optimizer, criterion, writer)
 
         # validation loop
-        pesq, stoi = validate(epoch, val_dataloader, model, criterion)
+        pesq, stoi = validate(epoch, val_dataloader, model, criterion, writer)
 
         if pesq > best_pesq and stoi > best_stoi:
             best_pesq = pesq
@@ -323,6 +344,8 @@ def main():
             print('Best Prec @1 PESQ: {:.4f}'.format(best_pesq))
             print('Best Prec @1 STOI: {:.4f}'.format(best_stoi))
 
+    writer.close()
+    
 class TestMain(unittest.TestCase):
     def test_mfnet(self):
         train_dataset = torchaudio.datasets.LIBRISPEECH(
