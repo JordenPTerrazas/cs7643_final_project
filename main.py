@@ -1,3 +1,4 @@
+import os
 import yaml
 import argparse
 import time
@@ -151,6 +152,16 @@ def train(epoch, data_loader, model, optimizer, criterion):
         pesq.update(batch_pesq, batch_size)
         stoi.update(batch_stoi, batch_size)
         iter_time.update(time.time() - start)
+
+        if idx % args.save_every == 0:
+            save_dir = args.save_dir + '/checkpoints'
+            if os.path.exists(save_dir):
+                torch.save(model.state_dict(), save_dir + '/' + args.model + f'_epoch{epoch}' + f'_step{idx}' + '.pth')
+                torch.save(optimizer.state_dict(), save_dir + '/' + 'optim' + f'_epoch{epoch}' + f'_step{idx}' + '_optimizer.pth')
+            else:
+                os.makedirs(save_dir)
+                torch.save(model.state_dict(), save_dir + '/' + args.model + f'_epoch{epoch}' + f'_step{idx}' + '.pth')
+                torch.save(optimizer.state_dict(), save_dir + '/' + 'optim' + f'_epoch{epoch}' + f'_step{idx}' + '_optimizer.pth')
         
         if idx % 10 == 0:
             print(('Epoch: [{0}][{1}/{2}]\t'
@@ -301,12 +312,16 @@ def main():
             best_stoi = stoi
             best_model = copy.deepcopy(model)
 
-    print('Best Prec @1 PESQ: {:.4f}'.format(pesq))
-    print('Best Prec @1 STOI: {:.4f}'.format(stoi))
+            if args.save_best:
+                best_save_dir = args.save_dir + '/best'
+                if os.path.exists(best_save_dir):
+                    torch.save(best_model.state_dict(), best_save_dir + '/' + args.model + '.pth')
+                else:
+                    os.makedirs(best_save_dir)
+                    torch.save(best_model.state_dict(), best_save_dir + '/' + args.model + '.pth')
 
-    if args.save_best:
-        torch.save(best_model.state_dict(), './checkpoints/' + args.model + '.pth')
-
+            print('Best Prec @1 PESQ: {:.4f}'.format(best_pesq))
+            print('Best Prec @1 STOI: {:.4f}'.format(best_stoi))
 
 class TestMain(unittest.TestCase):
     def test_mfnet(self):

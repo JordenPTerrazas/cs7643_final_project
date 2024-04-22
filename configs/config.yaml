@@ -16,4 +16,6 @@ data:
   train_label_dir: data/datasets/DNS_subset_10/train/clean
   val_data_dir: data/datasets/DNS_subset_10/val/noisy
   val_label_dir: data/datasets/DNS_subset_10/val/clean
+  save_every: 900
+  save_dir: models/baseline
   save_best: True

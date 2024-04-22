@@ -6,3 +6,5 @@ DNS_scripts/datasets\training_set_apr14\noise/*
 DNS_scripts/datasets\training_set_apr14\noisy/*
 .venv/*
 */__pycache__/*
+/__pycache__/*
+models/*
