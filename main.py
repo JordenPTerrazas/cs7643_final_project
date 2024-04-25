@@ -18,7 +18,7 @@ import torchaudio.functional as F
 from torch.utils.tensorboard import SummaryWriter
 
 from transforms.not_our_stdct import sdct_torch, isdct_torch
-from modules import MFNet
+from modules import MFNet, MFNetAct
 from losses import TotalLoss
 from dataloader import DNSDataset
 
@@ -83,7 +83,7 @@ def STOI(output, target):
     stoi = ShortTimeObjectiveIntelligibility(16000, False)
     return stoi(output, target)
 
-def train(epoch, data_loader, model, optimizer, criterion, writer):
+def train(epoch, data_loader, model, optimizer, criterion, writer, scheduler):
     iter_time = AverageMeter()
     losses = AverageMeter()
     pesq = AverageMeter()
@@ -119,6 +119,11 @@ def train(epoch, data_loader, model, optimizer, criterion, writer):
         print(loss)
         optimizer.zero_grad()
         loss.backward()
+
+        # Before the step, log gradients
+        for name, param in model.named_parameters():
+            writer.add_histogram(name + '/grad', param.grad, epoch * len(data_loader) + idx)
+
         optimizer.step()
         
         # Inverse Transform
@@ -147,10 +152,12 @@ def train(epoch, data_loader, model, optimizer, criterion, writer):
             if os.path.exists(save_dir):
                 torch.save(model.state_dict(), save_dir + '/' + args.model + f'_epoch{epoch}' + f'_step{idx}' + '.pth')
                 torch.save(optimizer.state_dict(), save_dir + '/' + 'optim' + f'_epoch{epoch}' + f'_step{idx}' + '_optimizer.pth')
+                torch.save(scheduler.state_dict(), save_dir + '/' + 'scheduler' + f'_epoch{epoch}' + f'_step{idx}' + '_scheduler.pth')
             else:
                 os.makedirs(save_dir)
                 torch.save(model.state_dict(), save_dir + '/' + args.model + f'_epoch{epoch}' + f'_step{idx}' + '.pth')
                 torch.save(optimizer.state_dict(), save_dir + '/' + 'optim' + f'_epoch{epoch}' + f'_step{idx}' + '_optimizer.pth')
+                torch.save(scheduler.state_dict(), save_dir + '/' + 'scheduler' + f'_epoch{epoch}' + f'_step{idx}' + '_scheduler.pth')
         
         if idx % 10 == 0:
             writer.add_scalar('Loss/train', loss.item(), epoch * len(data_loader) + idx)
@@ -277,6 +284,7 @@ def main():
     )
 
     # Hyper-Parameters: gamma, lr, betas, weight_decay, epochs
+    start_epoch = 0
     if args.model == "MFNet":
         model = MFNet(in_channels = 1, out_channels = 16)
 
@@ -285,7 +293,15 @@ def main():
             start_epoch = args.start_epoch
         else:
             start_epoch = 0
-    else:   # Could place modified model here
+    elif args.model == "MFNetAct":
+        model = MFNetAct(in_channels = 1, out_channels = 16)
+        
+        if args.load_checkpoint:
+            model.load_state_dict(torch.load(args.checkpoint_model_path))
+            start_epoch = args.start_epoch
+        else:
+            start_epoch = 0
+    else:
         pass
 
     criterion = TotalLoss(gamma = 0.5)
@@ -295,10 +311,11 @@ def main():
         betas = args.betas,
         weight_decay = args.weight_decay
     )
-    scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=0.0001)
+    scheduler = CosineAnnealingLR(optimizer, T_max=args.anneal_epochs, eta_min=0.0001)
 
     if args.load_checkpoint:
         optimizer.load_state_dict(torch.load(args.checkpoint_optimizer_path))
+        scheduler.load_state_dict(torch.load(args.checkpoint_scheduler_path))
     
     if os.path.exists(args.save_dir + '/logs'):
         writer = SummaryWriter(args.save_dir + '/logs')
@@ -311,7 +328,7 @@ def main():
     best_model = None
     for epoch in range(start_epoch, args.epochs):
         # train loop
-        train(epoch, train_dataloader, model, optimizer, criterion, writer)
+        train(epoch, train_dataloader, model, optimizer, criterion, writer, scheduler)
 
         scheduler.step()
 

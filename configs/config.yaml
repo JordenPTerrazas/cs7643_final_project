@@ -1,17 +1,22 @@
 Train:
   batch_size: 16
-  lr: 0.0034
+  lr: 0.01
   betas: [0.9, 0.999]
   weight_decay: 0.01
   epochs: 5
-  gamma: 0.5
+  anneal_epochs: 5
+  gamma: 0.3
+# Adding activation functions to the model, returning to baseline settings
+# changing anneal epochs to 4 still though so that the LR can recover some magnitude
+# later in training
 
 network:
   model: MFNet
   load_checkpoint: False
   checkpoint_model_path: blah
   checkpoint_optimizer_path: blah
-  start_epoch: 0 
+  checkpoint_scheduler_path: blah
+  start_epoch: 0
 
 data:
   train_data_dir: data/datasets/DNS_subset_10/train/noisy
@@ -19,5 +24,5 @@ data:
   val_data_dir: data/datasets/DNS_subset_10/val/noisy
   val_label_dir: data/datasets/DNS_subset_10/val/clean
   save_every: 900
-  save_dir: models/baseline
+  save_dir: models/run_4
   save_best: True
