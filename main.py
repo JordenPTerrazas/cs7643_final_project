@@ -18,7 +18,7 @@ import torchaudio.functional as F
 from torch.utils.tensorboard import SummaryWriter
 
 from transforms.not_our_stdct import sdct_torch, isdct_torch
-from modules import MFNet, MFNetAct
+from modules import MFNet, MFNetAct, MFNetNoSigmoid
 from losses import TotalLoss
 from dataloader import DNSDataset
 
@@ -296,6 +296,14 @@ def main():
     elif args.model == "MFNetAct":
         model = MFNetAct(in_channels = 1, out_channels = 16)
         
+        if args.load_checkpoint:
+            model.load_state_dict(torch.load(args.checkpoint_model_path))
+            start_epoch = args.start_epoch
+        else:
+            start_epoch = 0
+    elif args.model == "MFNetNoSigmoid":
+        model = MFNetNoSigmoid(in_channels = 1, out_channels = 16)
+
         if args.load_checkpoint:
             model.load_state_dict(torch.load(args.checkpoint_model_path))
             start_epoch = args.start_epoch

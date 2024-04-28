@@ -1,0 +1,15 @@
+Test:
+  batch_size: 16
+ 
+network:
+  model: MFNetAct
+  weights: models/baseline/best/MFNet.pth
+
+data:
+  real_only: False
+  real_save_dir: models/baseline/real_result
+  test_synth_reverb_clean: data/datasets/test_set/synthetic/with_reverb/clean
+  test_synth_reverb_noisy: data/datasets/test_set/synthetic/with_reverb/noisy
+  test_synth_noreverb_clean: data/datasets/test_set/synthetic/no_reverb/clean
+  test_synth_noreverb_noisy: data/datasets/test_set/synthetic/no_reverb/noisy
+  test_real_noisy: data/datasets/test_set/real_recordings_subset

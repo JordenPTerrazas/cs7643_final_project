@@ -2,16 +2,15 @@ Train:
   batch_size: 16
   lr: 0.01
   betas: [0.9, 0.999]
-  weight_decay: 0.01
+  weight_decay: 0.0034
   epochs: 5
-  anneal_epochs: 5
+  anneal_epochs: 3
   gamma: 0.3
-# Adding activation functions to the model, returning to baseline settings
-# changing anneal epochs to 4 still though so that the LR can recover some magnitude
-# later in training
+ # Remove sigmoid from the gating in GLFBs to counteract the vanishing gradient, brought LR back down
+ # and chance anneal epochs so we bump learning rate up later in training, bringing gamma back to normal
 
 network:
-  model: MFNet
+  model: MFNetNoSigmoid
   load_checkpoint: False
   checkpoint_model_path: blah
   checkpoint_optimizer_path: blah
@@ -24,5 +23,5 @@ data:
   val_data_dir: data/datasets/DNS_subset_10/val/noisy
   val_label_dir: data/datasets/DNS_subset_10/val/clean
   save_every: 900
-  save_dir: models/run_4
+  save_dir: models/run_5
   save_best: True

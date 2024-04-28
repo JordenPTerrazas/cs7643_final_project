@@ -48,7 +48,26 @@ class DNSDataset(Dataset):
             clean_waveform = self.transform(clean_waveform, **self.transform_kwargs)
 
         return noisy_waveform, clean_waveform
+    
+class DNSTestSet(Dataset):
+    def __init__(self, noisy_dir, transform=None, transform_kwargs={}):
+        self.noisy_dir = noisy_dir
+        self.transform = transform
+        self.transform_kwargs = transform_kwargs
+        self.noisy_files = [os.path.join(noisy_dir, file) for file in os.listdir(noisy_dir)]
+    
+    def __len__(self):
+        return len(self.noisy_files)
+    
+    def __getitem__(self, index):
+        noisy_file = self.noisy_files[index]
+
+        noisy_waveform, sample_rate = torchaudio.load(noisy_file)
         
+        if self.transform:
+            noisy_waveform = self.transform(noisy_waveform, **self.transform_kwargs)
+            
+        return noisy_waveform
     
 class TestLoading(unittest.TestCase):
     def test_dns_load(self):

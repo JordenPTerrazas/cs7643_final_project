@@ -8,3 +8,4 @@ DNS_scripts/datasets\training_set_apr14\noisy/*
 */__pycache__/*
 /__pycache__/*
 models/*
+runs/*
