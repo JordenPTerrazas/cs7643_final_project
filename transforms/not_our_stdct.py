@@ -1,6 +1,8 @@
 """DCT Implementation by jonashaag on GitHub https://github.com/jonashaag/pydct/tree/master"""
+import unittest
 import torch
 import torch_dct
+import torchaudio
 
 
 def sdct_torch(signals, frame_length, frame_step, window=torch.hamming_window):
@@ -29,7 +31,7 @@ def sdct_torch(signals, frame_length, frame_step, window=torch.hamming_window):
         window = window(frame_length).to(framed)
     if window is not None:
         framed = framed * window
-    return torch_dct.dct(framed, norm=None).transpose(-1, -2)
+    return torch_dct.dct(framed, norm="ortho").transpose(-1, -2)
 
 
 def isdct_torch(dcts, *, frame_step, frame_length=None, window=torch.hamming_window):
@@ -99,3 +101,19 @@ def torch_overlap_add(framed, *, frame_step, frame_length=None):
         kernel_size=(frame_length2, 1),
         stride=(frame_step, 1),
     ).reshape(*rest, -1)
+
+class TestSTDCT(unittest.TestCase):
+    def test_sdct_torch(self):
+        waveform, sample_rate = torchaudio.load("data/datasets/DNS_subset_10/train/noisy/book_00000_chp_0009_reader_06709_0_UO4bF1Y3jmk_snr34_fileid_27127.wav")
+        frame_length = 320
+        frame_step = 160
+        window = torch.sqrt(torch.hann_window(320)) + 1e-8
+
+        dcts = sdct_torch(waveform, frame_length=frame_length, frame_step=frame_step, window=window)
+        idcts = isdct_torch(dcts, frame_step=frame_step, frame_length=frame_length, window=window)
+
+        print(torch.sum(waveform - idcts))
+        assert torch.allclose(waveform, idcts, atol=1e-2)
+
+if __name__ == "__main__":
+    unittest.main()

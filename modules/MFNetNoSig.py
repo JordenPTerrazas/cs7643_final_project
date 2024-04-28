@@ -1,8 +1,8 @@
 import unittest
 import torch
 import torch.nn as nn
-#from modules import GLFB, UpSample, DownSample, Projection
-from .GLFB import GLFB
+#from modules import GLFBNoSig, UpSample, DownSample, Projection
+from .GLFBNoSigmoid import GLFBNoSig
 from .UpSample import UpSample
 from .DownSample import DownSample
 from .Projection import Projection
@@ -10,9 +10,9 @@ from .Projection import Projection
 # One thing not specified in the paper is the scenario where we end up with rounding
 # error when we downsample and upsample. I'm going to assume that we should pad the
 # result at the layer it occurs, but not sure on best practice.
-class MFNet(nn.Module):
+class MFNetNoSigmoid(nn.Module):
     def __init__(self, in_channels: int = 1, out_channels: int = 16):
-        super(MFNet, self).__init__()
+        super(MFNetNoSigmoid, self).__init__()
         # Batch norm layers
         # self.bn_1 = nn.BatchNorm2d(out_channels)
         # self.bn_2 = nn.BatchNorm2d(2*out_channels)
@@ -35,146 +35,146 @@ class MFNet(nn.Module):
             out_channels = in_channels
         )
 
-        # GLFB Layers (out_channels -> out_channels)
-        self.glfb_1 = GLFB(
+        # GLFBNoSig Layers (out_channels -> out_channels)
+        self.glfb_1 = GLFBNoSig(
             in_channels = out_channels,
             frame_size = 320,
             n_frames = 1008
         )
 
-        self.glfb_2 = GLFB(
+        self.glfb_2 = GLFBNoSig(
             in_channels = out_channels * 2,
             frame_size = 160,
             n_frames = 504
         )
 
-        self.glfb_3_1 = GLFB(
+        self.glfb_3_1 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_3_2 = GLFB(
+        self.glfb_3_2 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_3_3 = GLFB(
+        self.glfb_3_3 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_3_4 = GLFB(
+        self.glfb_3_4 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_3_5 = GLFB(
+        self.glfb_3_5 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_3_6 = GLFB(
+        self.glfb_3_6 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_3_7 = GLFB(
+        self.glfb_3_7 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_3_8 = GLFB(
+        self.glfb_3_8 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_4_1 = GLFB(
+        self.glfb_4_1 = GLFBNoSig(
             in_channels = out_channels * 8,
             frame_size = 40,
             n_frames = 126
         )
 
-        self.glfb_4_2 = GLFB(
+        self.glfb_4_2 = GLFBNoSig(
             in_channels = out_channels * 8,
             frame_size = 40,
             n_frames = 126
         )
 
-        self.glfb_4_3 = GLFB(
+        self.glfb_4_3 = GLFBNoSig(
             in_channels = out_channels * 8,
             frame_size = 40,
             n_frames = 126
         )
 
-        self.glfb_4_4 = GLFB(
+        self.glfb_4_4 = GLFBNoSig(
             in_channels = out_channels * 8,
             frame_size = 40,
             n_frames = 126
         )
 
-        self.glfb_5_1 = GLFB(
+        self.glfb_5_1 = GLFBNoSig(
             in_channels = out_channels * 16,
             frame_size = 20,
             n_frames = 63
         )
 
-        self.glfb_5_2 = GLFB(
+        self.glfb_5_2 = GLFBNoSig(
             in_channels = out_channels * 16,
             frame_size = 20,
             n_frames = 63
         )
 
-        self.glfb_5_3 = GLFB(
+        self.glfb_5_3 = GLFBNoSig(
             in_channels = out_channels * 16,
             frame_size = 20,
             n_frames = 63
         )
 
-        self.glfb_5_4 = GLFB(
+        self.glfb_5_4 = GLFBNoSig(
             in_channels = out_channels * 16,
             frame_size = 20,
             n_frames = 63
         )
 
-        self.glfb_5_5 = GLFB(
+        self.glfb_5_5 = GLFBNoSig(
             in_channels = out_channels * 16,
             frame_size = 20,
             n_frames = 63
         )
 
-        self.glfb_5_6 = GLFB(
+        self.glfb_5_6 = GLFBNoSig(
             in_channels = out_channels * 16,
             frame_size = 20,
             n_frames = 63
         )
 
-        self.glfb_6 = GLFB(
+        self.glfb_6 = GLFBNoSig(
             in_channels = out_channels * 8,
             frame_size = 40,
             n_frames = 126
         )
 
-        self.glfb_7 = GLFB(
+        self.glfb_7 = GLFBNoSig(
             in_channels = out_channels * 4,
             frame_size = 80,
             n_frames = 252
         )
 
-        self.glfb_8 = GLFB(
+        self.glfb_8 = GLFBNoSig(
             in_channels = out_channels * 2,
             frame_size = 160,
             n_frames = 504
         )
 
-        self.glfb_9 = GLFB(
+        self.glfb_9 = GLFBNoSig(
             in_channels = out_channels,
             frame_size = 320,
             n_frames = 1008
@@ -288,7 +288,7 @@ class MFNet(nn.Module):
 
 class TestMFNet(unittest.TestCase):
     def test_mfnet(self):
-        mfnet = MFNet(in_channels = 1, out_channels = 16)
+        mfnet = MFNetNoSigmoid(in_channels = 1, out_channels = 16)
         x = torch.randn(2, 1, 320, 999)
         out = mfnet(x)
         padded_x = nn.functional.pad(x, (0, 16 - x.shape[-1] % 16))

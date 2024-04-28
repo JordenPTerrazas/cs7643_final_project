@@ -10,19 +10,12 @@ from .Projection import Projection
 # One thing not specified in the paper is the scenario where we end up with rounding
 # error when we downsample and upsample. I'm going to assume that we should pad the
 # result at the layer it occurs, but not sure on best practice.
-class MFNet(nn.Module):
+class MFNetAct(nn.Module):
+    """MFNet with ReLU activation function after GFLB layers"""
     def __init__(self, in_channels: int = 1, out_channels: int = 16):
-        super(MFNet, self).__init__()
-        # Batch norm layers
-        # self.bn_1 = nn.BatchNorm2d(out_channels)
-        # self.bn_2 = nn.BatchNorm2d(2*out_channels)
-        # self.bn_3 = nn.BatchNorm2d(4*out_channels)
-        # self.bn_4 = nn.BatchNorm2d(8*out_channels)
-        # self.bn_5 = nn.BatchNorm2d(8*out_channels)
-        # self.bn_6 = nn.BatchNorm2d(4*out_channels)
-        # self.bn_7 = nn.BatchNorm2d(2*out_channels)
-        # self.bn_8 = nn.BatchNorm2d(out_channels)
-        # self.bn_9 = nn.BatchNorm2d(in_channels)
+        super(MFNetAct, self).__init__()
+        # ReLU activation function
+        self.relu = nn.ReLU()
 
         # Projection Layers (in_channels -> out_channels)
         self.projection_1 = Projection(
@@ -220,75 +213,109 @@ class MFNet(nn.Module):
 
         # Encoder part
         x = self.projection_1(x)
+        x = self.relu(x)
         x1 = self.glfb_1(x)
+        x1 = self.relu(x1)
         # BN
         # x1 = self.bn_1(x)
 
         x = self.downsample_1(x1)
+        x = self.relu(x)
         x2 = self.glfb_2(x)
+        x2 = self.relu(x2)
         # BN
         # x2 = self.bn_2(x)
 
         x = self.downsample_2(x2)
+        x = self.relu(x)
         x = self.glfb_3_1(x)
+        x = self.relu(x)
         x = self.glfb_3_2(x)
+        x = self.relu(x)
         x = self.glfb_3_3(x)
+        x = self.relu(x)
         x = self.glfb_3_4(x)
+        x = self.relu(x)
         x = self.glfb_3_5(x)
+        x = self.relu(x)
         x = self.glfb_3_6(x)
+        x = self.relu(x)
         x = self.glfb_3_7(x)
+        x = self.relu(x)
         x3 = self.glfb_3_8(x)
+        x3 = self.relu(x3)
         # BN
         # x3 = self.bn_3(x)
 
         x = self.downsample_3(x3)
+        x = self.relu(x)
         x = self.glfb_4_1(x)
+        x = self.relu(x)
         x = self.glfb_4_2(x)
+        x = self.relu(x)
         x = self.glfb_4_3(x)
+        x = self.relu(x)
         x4 = self.glfb_4_4(x)
+        x4 = self.relu(x4)
         # BN
         # x4 = self.bn_4(x)
 
         # Bottleneck
         x = self.downsample_4(x4)
+        x = self.relu(x)
         x = self.glfb_5_1(x)
+        x = self.relu(x)
         x = self.glfb_5_2(x)
+        x = self.relu(x)
         x = self.glfb_5_3(x)
+        x = self.relu(x)
         x = self.glfb_5_4(x)
+        x = self.relu(x)
         x = self.glfb_5_5(x)
+        x = self.relu(x)
         x = self.glfb_5_6(x)
+        x = self.relu(x)
         x = self.upsample_1(x)
+        x = self.relu(x)
         x = torch.add(x, x4)
         # BN
         # x = self.bn_5(x)
         
         # Decoder part
         x = self.glfb_6(x)
+        x = self.relu(x)
         x = self.upsample_2(x)
+        x = self.relu(x)
         x = torch.add(x, x3)
         # BN
         # x = self.bn_6(x)
 
         x = self.glfb_7(x)
+        x = self.relu(x)
         x = self.upsample_3(x)
+        x = self.relu(x)
         x = torch.add(x, x2)
         # BN
         # x = self.bn_7(x)
 
         x = self.glfb_8(x)
+        x = self.relu(x)
         x = self.upsample_4(x)
+        x = self.relu(x)
         x = torch.add(x, x1)
         # BN
         # x = self.bn_8(x)
 
         x = self.glfb_9(x)
+        x = self.relu(x)
         x = self.projection_2(x)
+        x = self.relu(x)
         # x = self.bn_9(x)
         return x
 
 class TestMFNet(unittest.TestCase):
     def test_mfnet(self):
-        mfnet = MFNet(in_channels = 1, out_channels = 16)
+        mfnet = MFNetAct(in_channels = 1, out_channels = 16)
         x = torch.randn(2, 1, 320, 999)
         out = mfnet(x)
         padded_x = nn.functional.pad(x, (0, 16 - x.shape[-1] % 16))
